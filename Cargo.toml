@@ -1,0 +1,37 @@
+[package]
+name = "aprcot"
+version = "0.2.0"
+authors = ["Vinyl <v@vinl.dev>"]
+edition = "2024"
+description = "Audio transcoder and compressor."
+license = "MPL-2.0"
+repository = "https://github.com/nylvim/aprcot"
+
+[dependencies]
+anyhow = "1"
+base64 = "0.22"
+clap = { version = "4", features = ["derive"] }
+exhale = "0.1.0"
+fdk-aac = "0.8"
+image = { version = "0.25", default-features = false, features = [
+    "jpeg",
+    "png",
+    "webp",
+    "avif",
+] }
+indicatif = { version = "0.18" }
+mp4 = "0.14"
+mp4ameta = "0.13"
+ncmdump = "0.8"
+ogg = "0.9"
+opus = "0.3"
+rayon = "1"
+ringbuf = "0.5"
+rubato = "3"
+symphonia = { version = "0.6", features = ["all"] }
+vorbis_rs = "0.5"
+walkdir = "2"
+webp = "0.3"
+
+[patch.crates-io]
+mp4 = { git = "https://github.com/nylvim/mp4-rust.git", branch = "usac" }
