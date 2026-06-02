@@ -105,6 +105,7 @@ impl<D: Decode> AacM4aEncoder<D> {
             profile: mp4_aot,
             freq_index,
             chan_conf,
+            asc_override: None,
         });
         let track_config = TrackConfig {
             track_type: TrackType::Audio,

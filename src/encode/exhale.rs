@@ -3,10 +3,7 @@ use std::iter::zip;
 
 use anyhow::Result;
 use exhale::{Channels, Encoder, EncoderConfig};
-use mp4::{
-    AacConfig, AudioObjectType, ChannelConfig, MediaConfig, Mp4Config, Mp4Sample, Mp4Writer,
-    SampleFreqIndex, TrackConfig, TrackType,
-};
+use mp4::{AacConfig, MediaConfig, Mp4Config, Mp4Sample, Mp4Writer, TrackConfig, TrackType};
 
 use super::aac::write_mp4_tags;
 use super::{Encode, Image, ImageConfig};
@@ -57,28 +54,14 @@ impl<D: Decode> ExhaleM4aEncoder<D> {
             timescale: 1000,
         };
 
-        let freq_index = match sample_rate {
-            44100 => SampleFreqIndex::Freq44100,
-            48000 => SampleFreqIndex::Freq48000,
-            96000 => SampleFreqIndex::Freq96000,
-            _ => unimplemented!(),
-        };
-        let chan_conf = match num_channels {
-            1 => ChannelConfig::Mono,
-            2 => ChannelConfig::Stereo,
-            _ => unreachable!(),
-        };
-        let media_conf = MediaConfig::AacConfig(AacConfig {
-            bitrate: 0,
-            profile: AudioObjectType::UnifiedSpeechAudioCoding,
-            freq_index,
-            chan_conf,
-        });
         let track_config = TrackConfig {
             track_type: TrackType::Audio,
             timescale: sample_rate,
             language: "und".into(),
-            media_conf,
+            media_conf: MediaConfig::AacConfig(AacConfig {
+                asc_override: Some(encoder.asc_data().to_vec()),
+                ..Default::default()
+            }),
         };
 
         let mut mp4_writer = Mp4Writer::write_start(writer, &mp4_config)?;
