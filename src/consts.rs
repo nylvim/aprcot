@@ -9,7 +9,7 @@ pub mod opus {
     pub const SAMPLE_RATE: usize = 48000;
     pub const FRAME_SIZE: usize = (SAMPLE_RATE as f32 * FRAME_SIZE_MS / 1000.0).round() as usize;
     pub const SERIAL: u32 = 0x1FEE1BAD;
-    pub const VENDOR_STRING: &[u8] = b"APPLE by uHioVK";
+    pub const VENDOR_STRING: &[u8] = b"Aprcot by Vinyl";
 
     const FRAME_SIZE_MS: f32 = 20.0;
 }
