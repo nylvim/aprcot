@@ -12,7 +12,7 @@ use rubato::audioadapter_buffers::direct::{InterleavedSlice, SequentialSlice};
 use rubato::{Fft, FixedSync, Resampler};
 use symphonia::core::audio::{AudioBuffer, GenericAudioBufferRef};
 use symphonia::core::codecs::CodecParameters;
-use symphonia::core::codecs::audio::{AudioCodecParameters, AudioDecoder, CODEC_ID_NULL_AUDIO};
+use symphonia::core::codecs::audio::{AudioDecoder, CODEC_ID_NULL_AUDIO};
 use symphonia::core::errors::Error::{DecodeError, IoError};
 use symphonia::core::formats::FormatReader;
 use symphonia::core::io::{MediaSource, MediaSourceStream};
@@ -92,13 +92,12 @@ impl GenericDecoder {
         let track = format_reader
             .tracks()
             .iter()
-            .find(|track| match &track.codec_params {
-                Some(CodecParameters::Audio(AudioCodecParameters {
-                    codec: CODEC_ID_NULL_AUDIO,
-                    ..
-                })) => false,
-                Some(CodecParameters::Audio(_)) => true,
-                _ => false,
+            .find(|track| {
+                matches!(
+                    &track.codec_params,
+                    Some(CodecParameters::Audio(params))
+                    if params.codec != CODEC_ID_NULL_AUDIO
+                )
             })
             .ok_or_else(|| anyhow!("no audio track found"))?;
         let track_id = track.id;

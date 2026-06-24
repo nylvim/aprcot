@@ -11,7 +11,7 @@ repository = "https://github.com/nylvim/aprcot"
 anyhow = "1"
 base64 = "0.22"
 clap = { version = "4", features = ["derive"] }
-exhale = "0.1.0"
+exhale = "0.2.0"
 fdk-aac = "0.8"
 image = { version = "0.25", default-features = false, features = [
     "jpeg",

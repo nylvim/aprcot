@@ -172,8 +172,8 @@ pub enum Codec {
         /// Enable eSBR, only recommended for very low bitrates
         #[arg(long)]
         sbr: bool,
-        /// VBR quality level, range from 0 to 12
-        #[arg(short, long, value_parser = parse_int::<u8>("quality", 1..=12), default_value = "3")]
+        /// VBR quality level, range from 0 to 9
+        #[arg(short, long, value_parser = parse_int::<u8>("quality", 1..=9), default_value = "3")]
         quality: Option<u8>,
     },
 }

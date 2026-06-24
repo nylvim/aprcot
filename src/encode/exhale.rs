@@ -14,6 +14,7 @@ pub struct ExhaleM4aEncoder<D, W = File> {
     encoder: Encoder,
     mp4_writer: Option<Mp4Writer<W>>,
     decode_buffer: Vec<f32>,
+    input_buffer: Vec<i32>,
     current_time: u64,
 
     metadata: Option<Metadata>,
@@ -41,6 +42,7 @@ impl<D: Decode> ExhaleM4aEncoder<D> {
         let config =
             EncoderConfig { sample_rate, channels, enable_sbr, vbr_level, ..Default::default() };
         let encoder = Encoder::new(config)?;
+        let input_buffer = vec![0; encoder.frame_size() * num_channels];
 
         let mp4_config = Mp4Config {
             major_brand: "M4A ".parse().unwrap(),
@@ -76,6 +78,7 @@ impl<D: Decode> ExhaleM4aEncoder<D> {
             encoder,
             mp4_writer: Some(mp4_writer),
             decode_buffer: vec![0.0; num_channels * frame_size],
+            input_buffer,
             current_time: 0,
             metadata: Some(metadata),
             cover_image: Some(image),
@@ -89,10 +92,10 @@ impl<D: Decode> Encode for ExhaleM4aEncoder<D> {
         const I24_MAX: i32 = 8388607;
 
         let eos_info = self.decoder.next_frame(&mut self.decode_buffer)?;
-        for (&f, i) in zip(&self.decode_buffer, self.encoder.input_mut()) {
+        for (&f, i) in zip(&self.decode_buffer, &mut self.input_buffer) {
             *i = ((f * I24_MIN as f32).round() as i32).clamp(I24_MIN, I24_MAX);
         }
-        let result = self.encoder.encode_frame()?.to_owned();
+        let result = self.encoder.encode_frame(&self.input_buffer)?.to_owned();
 
         let mp4_sample = Mp4Sample {
             start_time: self.current_time,
