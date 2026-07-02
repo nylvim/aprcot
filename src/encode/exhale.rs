@@ -6,7 +6,7 @@ use exhale::{Channels, Encoder, EncoderConfig};
 use mp4::{AacConfig, MediaConfig, Mp4Config, Mp4Sample, Mp4Writer, TrackConfig, TrackType};
 
 use super::aac::write_mp4_tags;
-use super::{Encode, Image, ImageConfig};
+use super::{Encode, EncoderArgs, Image};
 use crate::decode::{Decode, Metadata};
 
 pub struct ExhaleM4aEncoder<D, W = File> {
@@ -23,9 +23,7 @@ pub struct ExhaleM4aEncoder<D, W = File> {
 
 impl<D: Decode> ExhaleM4aEncoder<D> {
     pub fn new(
-        mut decoder: D,
-        writer: File,
-        img_cfg: ImageConfig,
+        EncoderArgs { mut decoder, writer, img_cfg }: EncoderArgs<D, File>,
         vbr_level: u8,
         enable_sbr: bool,
     ) -> Result<Self> {

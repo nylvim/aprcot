@@ -41,6 +41,12 @@ impl<D: Decode, W: Write> Encode for GenericEncoder<D, W> {
     }
 }
 
+pub struct EncoderArgs<D: Decode, W: Write> {
+    pub decoder: D,
+    pub writer: W,
+    pub img_cfg: ImageConfig,
+}
+
 struct Image {
     data: Vec<u8>,
     mime_type: &'static str,

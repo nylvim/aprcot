@@ -279,15 +279,15 @@ impl Decode for GenericDecoder {
     }
 
     fn cover_image(&mut self) -> Option<Vec<u8>> {
-        let cover_image = if let Some(revision) = self.format_reader.metadata().current()
-            && let [visual, ..] = &*revision.media.visuals
-        {
-            Some(visual.data.to_vec())
-        } else {
-            None
-        };
+        if self.cover_image.is_some() {
+            return self.cover_image.clone();
+        }
 
-        cover_image.or_else(|| self.cover_image.clone())
+        self.format_reader
+            .metadata()
+            .current()
+            .and_then(|revision| revision.media.visuals.first())
+            .map(|visual| visual.data.to_vec())
     }
 
     fn next_frame(&mut self, buf: &mut [f32]) -> Result<Option<usize>> {

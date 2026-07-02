@@ -11,7 +11,7 @@ use crate::encode::aac::AacM4aEncoder;
 use crate::encode::exhale::ExhaleM4aEncoder;
 use crate::encode::opus::OpusOggEncoder;
 use crate::encode::vorbis::VorbisOggEncoder;
-use crate::encode::{GenericEncoder, ImageConfig};
+use crate::encode::{EncoderArgs, GenericEncoder, ImageConfig};
 
 #[cfg(windows)]
 const USAGE_STRING: &str = "aprcot.exe <CODEC> [OPTIONS] <SOURCE> <OUTPUT>";
@@ -225,31 +225,30 @@ impl Codec {
         writer: File,
         img_cfg: ImageConfig,
     ) -> Result<GenericEncoder<D, File>> {
+        let encoder_args = EncoderArgs { decoder, writer, img_cfg };
         match self {
             Self::Opus { bitrate, complexity } => {
                 let bitrate = (bitrate.unwrap() * 1000.0).round() as i32;
                 let complexity = complexity.unwrap() as i32;
-                let encoder = OpusOggEncoder::new(decoder, writer, img_cfg, bitrate, complexity)?;
+                let encoder = OpusOggEncoder::new(encoder_args, bitrate, complexity)?;
                 Ok(GenericEncoder::Opus(Box::new(encoder)))
             }
             Self::Vorbis { vbr, bitrate, quality } => {
                 let bitrate = (bitrate.unwrap() * 1000.0).round() as u32;
                 let quality = quality.unwrap() / 10.0;
-                let encoder =
-                    VorbisOggEncoder::new(decoder, writer, img_cfg, *vbr, bitrate, quality)?;
+                let encoder = VorbisOggEncoder::new(encoder_args, *vbr, bitrate, quality)?;
                 Ok(GenericEncoder::Vorbis(Box::new(encoder)))
             }
             Self::Aac { cbr, bitrate, quality, profile } => {
                 let bitrate = (bitrate.unwrap() * 1000.0).round() as u32;
                 let quality = quality.unwrap();
                 let profile = profile.as_deref().unwrap();
-                let encoder =
-                    AacM4aEncoder::new(decoder, writer, img_cfg, *cbr, bitrate, quality, profile)?;
+                let encoder = AacM4aEncoder::new(encoder_args, *cbr, bitrate, quality, profile)?;
                 Ok(GenericEncoder::Aac(Box::new(encoder)))
             }
             Self::XheAac { sbr, quality } => {
                 let quality = quality.unwrap();
-                let encoder = ExhaleM4aEncoder::new(decoder, writer, img_cfg, quality, *sbr)?;
+                let encoder = ExhaleM4aEncoder::new(encoder_args, quality, *sbr)?;
                 Ok(GenericEncoder::Exhale(Box::new(encoder)))
             }
         }

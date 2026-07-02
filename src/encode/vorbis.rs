@@ -4,7 +4,7 @@ use anyhow::Result;
 use base64::prelude::*;
 use vorbis_rs::{VorbisBitrateManagementStrategy, VorbisEncoder, VorbisEncoderBuilder};
 
-use super::{Encode, Image, ImageConfig};
+use super::{Encode, EncoderArgs, Image};
 use crate::consts::vorbis::SERIAL;
 use crate::decode::{Decode, Metadata};
 
@@ -16,9 +16,7 @@ pub struct VorbisOggEncoder<D, W: Write> {
 
 impl<D: Decode, W: Write> VorbisOggEncoder<D, W> {
     pub fn new(
-        mut decoder: D,
-        writer: W,
-        img_cfg: ImageConfig,
+        EncoderArgs { mut decoder, writer, img_cfg }: EncoderArgs<D, W>,
         vbr: bool,
         bitrate: u32,
         quality: f32,
@@ -60,7 +58,10 @@ impl<D: Decode, W: Write> Encode for VorbisOggEncoder<D, W> {
     }
 }
 
-fn build_vorbis_comments(metadata: Metadata, image: Option<&Image>) -> Vec<(&'static str, String)> {
+pub(super) fn build_vorbis_comments(
+    metadata: Metadata,
+    image: Option<&Image>,
+) -> Vec<(&'static str, String)> {
     let mut comments = Vec::new();
 
     if let Some(title) = metadata.title {
@@ -87,7 +88,7 @@ fn build_vorbis_comments(metadata: Metadata, image: Option<&Image>) -> Vec<(&'st
         buffer.extend(24_u32.to_be_bytes()); // color depth
         buffer.extend(0_u32.to_be_bytes()); // 0 for non-indexed pictures (non-GIF)
         buffer.extend((data.len() as u32).to_be_bytes());
-        buffer.extend(&**data);
+        buffer.extend(data.as_slice());
 
         let encoded = BASE64_STANDARD.encode(buffer);
         comments.push(("METADATA_BLOCK_PICTURE", encoded));

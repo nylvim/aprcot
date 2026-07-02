@@ -12,7 +12,7 @@ use mp4::{
 };
 use mp4ameta::{Img, StorageFile, Tag};
 
-use super::{Encode, Image, ImageConfig};
+use super::{Encode, EncoderArgs, Image};
 use crate::decode::{Decode, Metadata};
 
 pub struct AacM4aEncoder<D, W = File> {
@@ -29,9 +29,7 @@ pub struct AacM4aEncoder<D, W = File> {
 
 impl<D: Decode> AacM4aEncoder<D> {
     pub fn new(
-        mut decoder: D,
-        writer: File,
-        img_cfg: ImageConfig,
+        EncoderArgs { mut decoder, writer, img_cfg }: EncoderArgs<D, File>,
         cbr: bool,
         bitrate: u32,
         quality: u8,

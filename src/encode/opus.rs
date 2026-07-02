@@ -1,11 +1,11 @@
 use std::io::Write;
 
 use anyhow::Result;
-use base64::prelude::*;
 use ogg::{PacketWriteEndInfo, PacketWriter};
 use opus::{Application, Bitrate, Channels, Encoder as OpusEncoder};
 
-use super::{Encode, Image, ImageConfig};
+use super::vorbis::build_vorbis_comments;
+use super::{Encode, EncoderArgs, Image};
 use crate::consts::opus::{SERIAL, VENDOR_STRING};
 use crate::decode::{Decode, Metadata};
 
@@ -19,9 +19,7 @@ pub struct OpusOggEncoder<D, W: Write> {
 
 impl<D: Decode, W: Write> OpusOggEncoder<D, W> {
     pub fn new(
-        mut decoder: D,
-        writer: W,
-        img_cfg: ImageConfig,
+        EncoderArgs { mut decoder, writer, img_cfg }: EncoderArgs<D, W>,
         bitrate: i32,
         complexity: i32,
     ) -> Result<Self> {
@@ -44,7 +42,7 @@ impl<D: Decode, W: Write> OpusOggEncoder<D, W> {
         let image = decoder.cover_image();
         let image = image.map(|data| img_cfg.process(data)).transpose()?;
         let id_header = build_ogg_id_header(num_channels, sample_rate, encoder.get_lookahead()?);
-        let comment_header = build_ogg_comment_header(&decoder.metadata(), image.as_ref());
+        let comment_header = build_ogg_comment_header(decoder.metadata(), image.as_ref());
         packet_writer.write_packet(id_header, SERIAL, PacketWriteEndInfo::EndPage, 0)?;
         packet_writer.write_packet(comment_header, SERIAL, PacketWriteEndInfo::EndPage, 0)?;
 
@@ -87,44 +85,17 @@ fn build_ogg_id_header(num_channels: usize, sample_rate: usize, pre_skip: i32) -
     header
 }
 
-fn build_ogg_comment_header(metadata: &Metadata, image: Option<&Image>) -> Vec<u8> {
+fn build_ogg_comment_header(metadata: Metadata, image: Option<&Image>) -> Vec<u8> {
     let mut header = Vec::new();
 
     header.extend(b"OpusTags");
     header.extend((VENDOR_STRING.len() as u32).to_le_bytes());
     header.extend(VENDOR_STRING);
 
-    let mut comments = Vec::new();
-    if let Some(title) = &metadata.title {
-        comments.push(format!("TITLE={title}"));
-    }
-    if let Some(artist) = &metadata.artist {
-        comments.push(format!("ARTIST={artist}"));
-    }
-    if let Some(album) = &metadata.album {
-        comments.push(format!("ALBUM={album}"));
-    }
-    if let Some(track_number) = &metadata.track_number {
-        comments.push(format!("TRACKNUMBER={track_number}"));
-    }
-
-    if let Some(Image { data, mime_type, width, height }) = image {
-        let mut buffer = Vec::new();
-        buffer.extend(3_u32.to_be_bytes()); // 3 for "Front Cover"
-        buffer.extend((mime_type.len() as u32).to_be_bytes());
-        buffer.extend(mime_type.as_bytes());
-        buffer.extend(0_u32.to_be_bytes()); // description length
-        buffer.extend(width.to_be_bytes());
-        buffer.extend(height.to_be_bytes());
-        buffer.extend(24_u32.to_be_bytes()); // color depth
-        buffer.extend(0_u32.to_be_bytes()); // 0 for non-indexed pictures (non-GIF)
-        buffer.extend((data.len() as u32).to_be_bytes());
-        buffer.extend(&**data);
-
-        let encoded = BASE64_STANDARD.encode(buffer);
-        comments.push(format!("METADATA_BLOCK_PICTURE={encoded}"));
-    }
-
+    let comments: Vec<_> = build_vorbis_comments(metadata, image)
+        .into_iter()
+        .map(|(k, v)| format!("{k}={v}"))
+        .collect();
     header.extend((comments.len() as u32).to_le_bytes());
     for comment in comments {
         header.extend((comment.len() as u32).to_le_bytes());
