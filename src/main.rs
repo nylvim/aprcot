@@ -36,7 +36,7 @@ fn main() -> Result<()> {
         _ => unreachable!(),
     };
     ensure!(
-        !matches!(params.codec, Codec::Aac { .. })
+        !matches!(params.codec, Codec::Aac { .. } | Codec::XheAac { .. })
             || matches!(target_format, ImageFormat::Copy | ImageFormat::Jpeg | ImageFormat::Png),
         "MP4 format only accepts JPEG or PNG"
     );

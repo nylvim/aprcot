@@ -107,7 +107,7 @@ pub struct Cli {
     #[arg(short, long, global = true,
         value_parser = ["copy", "png", "jpeg", "webp", "avif"], default_value = "copy")]
     pub format: Option<String>,
-    /// Target dimensions of cover images, in the format `WxH`
+    /// Max width and height of cover images, in the format `WxH`
     #[arg(short = 'd', long, global = true, value_parser = parse_dims)]
     pub img_dims: Option<(u32, u32)>,
     /// Image encoding quality, range from 0.0 to 100.0
