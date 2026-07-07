@@ -11,7 +11,7 @@ repository = "https://github.com/nylvim/aprcot"
 anyhow = "1"
 base64 = "0.22"
 clap = { version = "4", features = ["derive"] }
-exhale = "0.2.1"
+exhale = "0.2"
 fdk-aac = "0.8"
 image = { version = "0.25", default-features = false, features = [
     "jpeg",
@@ -19,7 +19,7 @@ image = { version = "0.25", default-features = false, features = [
     "webp",
     "avif",
 ] }
-indicatif = { version = "0.18" }
+indicatif = "0.18"
 mp4 = "0.14"
 mp4ameta = "0.13"
 ncmdump = "0.8"
