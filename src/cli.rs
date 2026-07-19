@@ -89,11 +89,11 @@ pub struct Cli {
     /// Overwrite existing file, otherwise add suffix to the new file's name
     #[arg(short, long, global = true)]
     pub overwrite: bool,
-    /// Skip files with existing target files
-    #[arg(short = 'n', long, global = true)]
-    pub only_new: bool,
-    /// Skip files that failed to be processed
+    /// Perform an incremental update, with an option to remove outdated targets
     #[arg(short, long, global = true)]
+    pub sync: bool,
+    /// Skip files that failed to be processed
+    #[arg(short = 'i', long, global = true)]
     pub skip_errors: bool,
     /// Print more detailed logs
     #[arg(short, long, global = true)]

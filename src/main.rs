@@ -3,13 +3,15 @@ mod consts;
 mod decode;
 mod encode;
 
+use std::collections::HashSet;
 use std::fs::{OpenOptions, create_dir_all, remove_file, rename};
 use std::path::Path;
+use std::sync::Mutex;
 
 use anyhow::{Result, ensure};
 use clap::Parser;
 use indicatif::{ProgressBar, ProgressStyle};
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use walkdir::WalkDir;
 
 use crate::cli::{Cli, Codec};
@@ -76,7 +78,9 @@ fn main() -> Result<()> {
     );
     progress_bar.inc(0); // show the bar
 
-    files.into_par_iter().try_for_each(|path| -> Result<()> {
+    let target_files = params.sync.then(|| Mutex::new(HashSet::new()));
+
+    files.par_iter().try_for_each(|path| -> Result<()> {
         macro_rules! unwrap {
             ($result:expr) => {
                 match $result {
@@ -108,9 +112,12 @@ fn main() -> Result<()> {
             unwrap!(create_dir_all(parent));
         }
 
-        if params.only_new && new_path.exists() {
+        if let Some(mutex) = &target_files
+            && new_path.exists()
+        {
             progress_bar.suspend(|| log!(true, "Skipping file: {}", path.display()));
             progress_bar.inc(1);
+            mutex.lock().unwrap_or_else(|e| e.into_inner()).insert(new_path);
             return Ok(());
         }
 
@@ -151,7 +158,7 @@ fn main() -> Result<()> {
             }};
         }
 
-        let decoder = unwrap_clean!(params.codec.new_decoder(&path));
+        let decoder = unwrap_clean!(params.codec.new_decoder(path));
         let mut encoder =
             unwrap_clean!(params.codec.new_encoder(decoder, temp_file, ImageConfig {
                 target_format,
@@ -175,9 +182,47 @@ fn main() -> Result<()> {
         }
 
         progress_bar.inc(1);
+        if let Some(mutex) = &target_files {
+            mutex.lock().unwrap_or_else(|e| e.into_inner()).insert(new_path);
+        }
         Ok(())
     })?;
 
     progress_bar.finish();
+
+    if let Some(mutex) = target_files {
+        let target_files = mutex.into_inner().unwrap_or_else(|e| e.into_inner());
+        let mut unprocessed_targets: Vec<_> = WalkDir::new(&params.output)
+            .into_iter()
+            .filter_entry(|d| d.file_name().to_str().is_some_and(|s| !s.starts_with('.')))
+            .flatten()
+            .filter(|d| d.file_type().is_file())
+            .map(|d| d.into_path())
+            .filter(|p| !target_files.contains(p))
+            .collect();
+        unprocessed_targets.sort_unstable();
+        if unprocessed_targets.is_empty() {
+            return Ok(());
+        }
+
+        eprintln!("\nThese target files have no corresponding sources:");
+        for file in &unprocessed_targets {
+            eprintln!("  {}", file.strip_prefix(&params.output).unwrap().display())
+        }
+
+        if !params.quiet {
+            eprint!("Remove them all? (y/N): ");
+            let mut answer = String::new();
+            let _ = std::io::stdin().read_line(&mut answer);
+            if !(answer == "y\n" || answer == "Y\n") {
+                return Ok(());
+            }
+        }
+
+        for file in unprocessed_targets {
+            let _ = remove_file(file);
+        }
+    }
+
     Ok(())
 }
