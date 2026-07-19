@@ -116,14 +116,7 @@ impl GenericDecoder {
         let resampler = if source_rate == sample_rate {
             None
         } else {
-            Some(Fft::new(
-                source_rate,
-                sample_rate,
-                frame_size,
-                1,
-                num_channels,
-                FixedSync::Output,
-            )?)
+            Some(Fft::new(source_rate, sample_rate, frame_size, num_channels, FixedSync::Output)?)
         };
 
         let mut input_buffer = Vec::with_capacity(num_channels);

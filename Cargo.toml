@@ -27,7 +27,7 @@ ogg = "0.9"
 opus = "0.3"
 rayon = "1"
 ringbuf = "0.5"
-rubato = "3"
+rubato = "4"
 symphonia = { version = "0.6", features = ["all"] }
 vorbis_rs = "0.5"
 walkdir = "2"
