@@ -86,7 +86,7 @@ pub struct Cli {
     /// Preserve directory structure
     #[arg(short = 'z', long, global = true)]
     pub preserve_structure: bool,
-    /// Overwrite existing files
+    /// Overwrite existing file, otherwise add suffix to the new file's name
     #[arg(short, long, global = true)]
     pub overwrite: bool,
     /// Skip files with existing target files
@@ -95,12 +95,11 @@ pub struct Cli {
     /// Skip files that failed to be processed
     #[arg(short, long, global = true)]
     pub skip_errors: bool,
-    /// Logging verbosity level
-    #[arg(short, long, global = true,
-        value_parser = parse_int::<u8>("verbosity", 0..=5), default_value = "2")]
-    pub verbosity: u8,
-    /// Suppress all error messages (equivalent to -v0)
-    #[arg(short = 'x', long, global = true, conflicts_with = "verbosity")]
+    /// Print more detailed logs
+    #[arg(short, long, global = true)]
+    pub verbose: bool,
+    /// Suppress all log messages
+    #[arg(short = 'x', long, global = true, conflicts_with = "verbose")]
     pub quiet: bool,
 
     /// Image format
@@ -148,7 +147,7 @@ pub enum Codec {
             conflicts_with_all = ["cbr", "bitrate"])]
         quality: Option<u8>,
         /// AAC profile. HE-AAC and HE-AACv2 are only recommended for very low bitrates
-        #[arg(short, long, value_parser = ["lc", "he", "hev2"], default_value = "lc")]
+        #[arg(long, value_parser = ["lc", "he", "hev2"], default_value = "lc")]
         profile: Option<String>,
     },
     /// Not recommended, slower encoding and slightly worse quality than AAC

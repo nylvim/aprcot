@@ -18,10 +18,9 @@ use crate::encode::{Encode, ImageConfig, ImageFormat};
 fn main() -> Result<()> {
     let params = Cli::parse();
 
-    let max_verbosity = if params.quiet { 0 } else { params.verbosity };
     macro_rules! log {
-        ($verbosity:expr, $($args:expr),*) => {
-            if $verbosity <= max_verbosity {
+        ($verbose:expr, $($args:expr),*) => {
+            if (!$verbose || params.verbose) && !params.quiet {
                 eprintln!($($args),*);
             }
         };
@@ -47,7 +46,7 @@ fn main() -> Result<()> {
 
     if !params.output.exists() {
         create_dir_all(&params.output)?;
-        log!(1, "Created directory: {}", params.output.display());
+        log!(false, "Created directory: {}", params.output.display());
     }
 
     // clean temp files
@@ -84,8 +83,8 @@ fn main() -> Result<()> {
                     Ok(val) => val,
                     Err(err) if params.skip_errors => {
                         progress_bar.suspend(|| {
-                            log!(2, "Error: {}", err);
-                            log!(2, "  when processing file: {}\n", path.display());
+                            log!(false, "Error: {}", err);
+                            log!(false, "  when processing file: {}\n", path.display());
                         });
                         progress_bar.inc(1);
                         return Ok(());
@@ -110,7 +109,7 @@ fn main() -> Result<()> {
         }
 
         if params.only_new && new_path.exists() {
-            progress_bar.suspend(|| log!(3, "Skipping file: {}", path.display()));
+            progress_bar.suspend(|| log!(true, "Skipping file: {}", path.display()));
             progress_bar.inc(1);
             return Ok(());
         }
@@ -168,9 +167,9 @@ fn main() -> Result<()> {
             let new_filename = new_path.file_name().unwrap().display();
             progress_bar.suspend(|| {
                 if params.overwrite {
-                    log!(3, "{} saved as and overwrote {}", og_filename, new_filename);
+                    log!(true, "{} saved as and overwrote {}", og_filename, new_filename);
                 } else {
-                    log!(3, "{} saved as {}", og_filename, new_filename);
+                    log!(true, "{} saved as {}", og_filename, new_filename);
                 }
             });
         }
